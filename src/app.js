@@ -1,5 +1,5 @@
 /* =====================================================================
-   INTERFACE DO DIAGNÓSTICO LIFE POCKET
+   INTERFACE DO DIAGNÓSTICO LIFE DINÂMICO
    Telas: início (vídeo) → acesso → perguntas → processando → resultado
    ===================================================================== */
 
@@ -26,39 +26,8 @@ const ICO = {
   juntos: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.8-3 3-4.6 5.5-4.6s4.7 1.6 5.5 4.6M14.5 15c2.3-.4 4.6.8 5.5 3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
 };
 
-/* ---------------- especialista ---------------- */
+/* ---------------- lead ---------------- */
 function primeiroNome() { return estado.lead ? estado.lead.nome.trim().split(/\s+/)[0] : ''; }
-function linkEspecialista(motivo) {
-  const num = (CONFIG.whatsappEspecialista || '').replace(/\D/g, '');
-  if (!num) return null;
-  const msg = estado.lead
-    ? CONFIG.mensagemWhatsapp.replace('{nome}', estado.lead.nome.trim())
-    : 'Olá! Vim pelo site e quero falar com um especialista sobre o Diagnóstico LIFE.';
-  return `https://wa.me/${num}?text=${encodeURIComponent(motivo === 'completo' && estado.lead ? msg : msg)}`;
-}
-function botaoEspecialista(classe = 'btn btn-vidro', rotulo = 'Falar com especialista', motivo = '') {
-  const url = linkEspecialista(motivo);
-  const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : 'href="#especialista" data-modal-especialista';
-  return `<a class="${classe}" ${attrs} data-rastrear="especialista${motivo ? '_' + motivo : ''}">${ICO.chat}<span>${rotulo}</span></a>`;
-}
-function abrirModalEspecialista() {
-  const m = $('#modal');
-  m.innerHTML = `<div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-tit">
-    <button class="modal-fechar" type="button" aria-label="Fechar">×</button>
-    <img class="modal-coracao" src="${IMG.coracao}" alt="">
-    <h3 id="modal-tit">Fale com um especialista Life</h3>
-    <p>Nossos planejadores explicam o seu resultado e mostram como funciona a versão completa do diagnóstico.</p>
-    <div class="modal-contatos">
-      <span>E-mail</span><b>${CONFIG.emailContato}</b>
-      <span>Site</span><a href="${CONFIG.site}" target="_blank" rel="noopener">${CONFIG.site.replace(/^https?:\/\//, '')}</a>
-    </div>
-  </div>`;
-  m.hidden = false;
-  rastrear('abriu_contato');
-  const fechar = () => { m.hidden = true; m.innerHTML = ''; };
-  $('.modal-fechar', m).addEventListener('click', fechar);
-  m.addEventListener('click', e => { if (e.target === m) fechar(); }, { once: true });
-}
 
 /* ---------------- avisos ---------------- */
 let toastTimer;
@@ -90,14 +59,12 @@ function temperatura(r, res) {
   return pts >= 5 ? 'quente' : pts >= 3 ? 'morno' : 'frio';
 }
 function enviarLead(evento) {
-  const url = CONFIG.webhookLead;
-  if (!url || !estado.lead) return;
+  if (!estado.lead) return;
   const res = estado.resultado;
   const corpo = {
-    evento, data: new Date().toISOString(), produto: CONFIG.produto,
-    lead: estado.lead, origem: estado.origem,
-    dispositivo: { largura: window.innerWidth, mobile: /Mobi|Android/i.test(navigator.userAgent), idioma: navigator.language },
+    ...corpoBase(evento),
     respostas: estado.respostas,
+    respostasTexto: respostasLegiveis(estado.respostas),
     comportamento: {
       tempoTotalSeg: estado.inicioQuiz ? Math.round((Date.now() - estado.inicioQuiz) / 1000) : 0,
       temposPorPerguntaSeg: Object.fromEntries(Object.entries(estado.tempos).map(([k, v]) => [k, Math.round(v / 100) / 10])),
@@ -112,15 +79,15 @@ function enviarLead(evento) {
       aporteNecessario: Math.round(res.independencia.aporteNecessario), sobraMensal: Math.round(res.sobra),
       taxaPoupancaPct: Math.round(res.taxaPoupanca * 100), reservaMeses: res.reservaMeses,
       patrimonioBruto: Math.round(res.patrimonioBruto),
+      expansao: res.expansao,
       atuarDeImediato: res.plano.imediato.map(i => i.titulo),
+      otimizar: res.plano.ajustes.map(i => i.titulo),
       oportunidades: res.oportunidades.map(o => ({ produto: o.produto, titulo: o.titulo, potencial: o.potencial })),
       potencialPorProduto: res.produtos
     };
     corpo.temperatura = temperatura(estado.respostas, res);
   }
-  try {
-    fetch(url, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corpo) }).catch(() => {});
-  } catch (e) { /* sem rede */ }
+  enviarPlanilha(corpo);
 }
 
 /* ---------------- cena (vídeo de fundo) ---------------- */
@@ -153,11 +120,11 @@ function telaInicio() {
     ${botaoEspecialista('btn btn-vidro btn-pequeno')}
   </header>
   <main class="hero">
-    <p class="selo-produto"><span>Diagnóstico Financeiro LIFE</span><b>Versão Pocket</b></p>
+    <p class="selo-produto"><span>Diagnóstico Financeiro LIFE</span><b>Versão Dinâmica</b></p>
     <h1>Em 5 minutos, descubra onde o seu dinheiro <em>trava</em> e onde ele pode <em>crescer</em>.</h1>
-    <p class="hero-texto">Uma versão rápida e pessoal do diagnóstico que os planejadores do Grupo Life Brasil fazem com cada cliente. Você responde perguntas simples e recebe na hora o seu cenário: Nota LIFE, Estrela LIFE, Radar de Independência Financeira e um plano em três frentes.</p>
+    <p class="hero-texto">Uma versão rápida e pessoal do diagnóstico que os planejadores do Grupo Life Brasil fazem com cada cliente. Você responde perguntas simples e recebe na hora o seu cenário: Nota LIFE, Estrela LIFE, Indicador de Independência Financeira e um plano em três frentes.</p>
     <div class="hero-acoes">
-      <button class="btn btn-primario btn-grande" type="button" id="btn-iniciar">Iniciar diagnóstico ${ICO.seta}</button>
+      <button class="btn btn-primario btn-grande" type="button" id="btn-iniciar">Iniciar Diagnóstico ${ICO.seta}</button>
       <a class="btn btn-fantasma" href="#como-funciona">Como funciona</a>
     </div>
     <ul class="hero-fatos">
@@ -174,18 +141,18 @@ function telaInicio() {
       <ol class="passos">
         <li><b>Identifique-se</b><span>Nome, WhatsApp e e-mail liberam o acesso ao diagnóstico.</span></li>
         <li><b>Responda</b><span>Cerca de 25 perguntas rápidas em 6 etapas. Valores aproximados bastam.</span></li>
-        <li><b>Veja o seu cenário</b><span>Nota LIFE, os 8 pilares da Estrela LIFE, o Radar de Independência Financeira e o que fazer primeiro.</span></li>
-        <li><b>Converse com a Life</b><span>Um especialista aprofunda o resultado e monta com você o diagnóstico completo.</span></li>
+        <li><b>Veja o seu cenário</b><span>Nota LIFE, os 8 pilares da Estrela LIFE, o Indicador de Independência Financeira e o que fazer primeiro.</span></li>
+        <li><b>Converse com a Life</b><span>Agende o Diagnóstico Completo: um planejador aprofunda o resultado e monta o plano com você.</span></li>
       </ol>
     </div>
   </section>
 
   <section class="faixa faixa-escura">
     <div class="faixa-int">
-      <p class="sobretitulo">Pocket ou completo</p>
-      <h2>O Pocket mostra o mapa. O completo traça a rota com você.</h2>
-      <div class="comparativo" role="table" aria-label="Comparação entre a versão Pocket e a versão completa">
-        <div class="cmp-linha cmp-cab" role="row"><span role="columnheader"></span><span role="columnheader">Pocket <small>grátis, online</small></span><span role="columnheader">Completo <small>com planejador Life</small></span></div>
+      <p class="sobretitulo">Dinâmico ou completo</p>
+      <h2>O Dinâmico mostra o mapa. O Completo traça a rota com você.</h2>
+      <div class="comparativo" role="table" aria-label="Comparação entre o Diagnóstico Dinâmico e o Diagnóstico Completo">
+        <div class="cmp-linha cmp-cab" role="row"><span role="columnheader"></span><span role="columnheader">Dinâmico <small>grátis, online</small></span><span role="columnheader">Completo <small>com planejador Life</small></span></div>
         ${[
           ['Tempo', '5 minutos, sozinho', 'Reuniões com um planejador dedicado'],
           ['Estrela LIFE', '8 pilares em visão geral', '20 sub-pilares, cada um com justificativa'],
@@ -196,8 +163,8 @@ function telaInicio() {
         ].map(l => `<div class="cmp-linha" role="row"><span role="rowheader">${l[0]}</span><span role="cell">${l[1]}</span><span role="cell">${l[2]}</span></div>`).join('')}
       </div>
       <div class="faixa-acoes">
-        <button class="btn btn-primario" type="button" id="btn-iniciar-2">Começar pelo Pocket ${ICO.seta}</button>
-        ${botaoEspecialista('btn btn-fantasma', 'Quero falar sobre o completo', 'completo')}
+        <button class="btn btn-primario" type="button" id="btn-iniciar-2">Começar pelo Dinâmico ${ICO.seta}</button>
+        ${botaoEspecialista('btn btn-fantasma', 'Falar sobre o Diagnóstico Completo', 'landing_completo')}
       </div>
     </div>
   </section>
@@ -228,7 +195,7 @@ function telaAcesso() {
   </header>
   <main class="acesso">
     <section class="acesso-info">
-      <p class="selo-produto"><span>Diagnóstico Financeiro LIFE</span><b>Versão Pocket</b></p>
+      <p class="selo-produto"><span>Diagnóstico Financeiro LIFE</span><b>Versão Dinâmica</b></p>
       <h1>Antes de começar</h1>
       <ul class="instrucoes">
         <li><b>6 etapas, cerca de 5 minutos.</b> Você, seu mês, proteção, patrimônio, objetivos e a sua relação com o dinheiro.</li>
@@ -253,7 +220,7 @@ function telaAcesso() {
         <span>Autorizo o Grupo Life Brasil a usar estas informações para gerar meu diagnóstico e entrar em contato comigo, conforme a <a href="${CONFIG.politicaPrivacidade}" target="_blank" rel="noopener">política de privacidade</a> e a LGPD.</span>
       </label>
       <small class="erro" data-erro="lgpd"></small>
-      <button class="btn btn-primario btn-grande btn-bloco" type="submit">Começar meu diagnóstico ${ICO.seta}</button>
+      <button class="btn btn-primario btn-grande btn-bloco" type="submit">Começar meu Diagnóstico ${ICO.seta}</button>
       <p class="form-nota">${ICO.escudo}<span>Seus dados ficam com o Grupo Life Brasil e não são compartilhados.</span></p>
     </form>
   </main>`;
@@ -275,7 +242,8 @@ function telaAcesso() {
     $$('.campo input').forEach(i => i.toggleAttribute('aria-invalid', !!erros[i.name]));
     if (Object.keys(erros).length) { const p = $('[aria-invalid]') || $('#f-lgpd'); p.focus(); return; }
     estado.lead = { nome, telefone, telefoneFormatado: mascaraTelefone(telefone), email, consentimentoLGPD: true, acessoEm: new Date().toISOString() };
-    estado.respostas = {}; estado.tempos = {}; estado.voltas = 0; estado.resultado = null;
+    estado.respostas = {}; estado.tempos = {}; estado.voltas = 0; estado.resultado = null; estado.agendamento = null;
+    sessaoId = novaSessao();
     estado.inicioQuiz = Date.now();
     Protecao.ativar();
     rastrear('acesso');
@@ -293,12 +261,17 @@ const LETRAS = 'ABCDEFGH';
 const moedaTexto = v => (v === undefined || v === null || v === '') ? '' : Math.round(v).toLocaleString('pt-BR');
 const lerMoeda = s => { const d = String(s).replace(/\D/g, ''); return d ? Math.min(999999999, parseInt(d, 10)) : null; };
 
-function htmlMoeda(id, valor, rotuloZero, atalhos) {
-  return `<div class="moeda">
+function htmlMoeda(id, valor, rotuloZero, atalhos, faixas) {
+  const campo = `<div class="moeda">
     <span class="moeda-rs">R$</span>
     <input id="m-${id}" data-moeda="${id}" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${moedaTexto(valor)}" aria-label="Valor em reais">
-  </div>
-  ${(atalhos || rotuloZero) ? `<div class="atalhos">${(atalhos || [0]).map(a => `<button type="button" class="chip" data-atalho="${id}" data-valor="${a}">${a === 0 ? (rotuloZero || 'R$ 0') : fmtMoeda(a)}</button>`).join('')}</div>` : ''}`;
+  </div>`;
+  if (faixas) {
+    return `<div class="faixas" role="radiogroup">${faixas.map(f => `<button type="button" class="chip chip-faixa${valor === f.v ? ' sel' : ''}" data-atalho="${id}" data-valor="${f.v}" role="radio" aria-checked="${valor === f.v}">${f.t}</button>`).join('')}</div>
+    <p class="moeda-ou">ou digite o valor</p>${campo}`;
+  }
+  return `${campo}
+  ${(atalhos || rotuloZero) ? `<div class="atalhos">${(atalhos || [0]).map(a => `<button type="button" class="chip${valor === a ? ' sel' : ''}" data-atalho="${id}" data-valor="${a}">${a === 0 ? (rotuloZero || 'R$ 0') : fmtMoeda(a)}</button>`).join('')}</div>` : ''}`;
 }
 
 function telaPergunta() {
@@ -328,7 +301,7 @@ function telaPergunta() {
         <span class="caixa">${ICO.check}</span><span class="opcao-t">${o.t}</span>
       </button>`).join('')}</div>${q.max ? `<p class="contador" id="contador">${sel.length} de ${q.max} escolhidas</p>` : ''}`;
   } else if (q.tipo === 'moeda') {
-    corpo = htmlMoeda(q.id, r[q.id], q.rotuloZero, q.atalhos);
+    corpo = htmlMoeda(q.id, r[q.id], q.rotuloZero, q.atalhos, q.faixas);
   } else if (q.tipo === 'numero') {
     corpo = `<div class="numero"><input id="n-${q.id}" type="text" inputmode="numeric" maxlength="2" placeholder="${q.placeholder || ''}" value="${r[q.id] ?? ''}" aria-label="${esc(q.titulo)}"><span>${q.sufixo}</span></div>`;
   } else if (q.tipo === 'escala') {
@@ -364,7 +337,7 @@ function telaPergunta() {
         <p class="erro-quiz" id="erro-quiz" role="alert"></p>
         <div class="quiz-acoes">
           <button type="button" class="btn btn-fantasma" id="btn-voltar">${ICO.voltar}<span>${idx === 0 ? 'Meus dados' : 'Voltar'}</span></button>
-          ${precisaBotao ? `<button type="button" class="btn btn-primario" id="btn-continuar">${idx === lista.length - 1 ? 'Ver meu diagnóstico' : 'Continuar'} ${ICO.seta}</button>` : `<span class="dica-teclado">Toque em uma opção${window.matchMedia('(hover: hover)').matches ? ' ou use as letras do teclado' : ''}</span>`}
+          ${precisaBotao ? `<button type="button" class="btn btn-primario" id="btn-continuar">${idx === lista.length - 1 ? 'Ver meu Diagnóstico' : 'Continuar'} ${ICO.seta}</button>` : `<span class="dica-teclado">Toque em uma opção${window.matchMedia('(hover: hover)').matches ? ' ou use as letras do teclado' : ''}</span>`}
         </div>
       </div>
       <p class="quiz-rodape">Pergunta ${idx + 1} de ${lista.length}</p>
@@ -538,6 +511,7 @@ function telaResultado() {
   const agora = new Date();
   const dataTxt = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   Protecao.marcaDagua(`${estado.lead.nome}\n${estado.lead.telefoneFormatado} · ${dataTxt}\nUso pessoal · Grupo Life Brasil`);
+  const statusIndependencia = p => p >= 0.75 ? 'ok' : p >= 0.45 ? 'atencao' : 'critico';
   const statusPill = st => `<span class="pill pill-${st}">${st === 'ok' ? ICO.check : st === 'critico' ? ICO.alerta : ICO.ajuste}${ROTULO_STATUS[st]}</span>`;
   const indTxt = ind.pct >= 9.99 ? '+999%' : fmtPct(ind.pct);
 
@@ -573,7 +547,7 @@ function telaResultado() {
 
     <section class="res-hero">
       <div class="res-hero-texto">
-        <p class="selo-produto"><span>Seu diagnóstico</span><b>Versão Pocket</b></p>
+        <p class="selo-produto"><span>Seu diagnóstico</span><b>Versão Dinâmica</b></p>
         <h1>${esc(primeiroNome())}, hoje o seu perfil é <em>${res.perfil.nome}</em>.</h1>
         <p class="res-perfil">${res.perfil.descricao}</p>
         <div class="kpis">
@@ -604,9 +578,9 @@ function telaResultado() {
     </section>
 
     <section class="bloco">
-      <header class="bloco-cab"><p class="sobretitulo">Futuro</p><h2>Radar de Independência Financeira</h2><p>Quanto do patrimônio necessário para viver de renda você terá ${ind.aposentado ? 'hoje' : 'na idade que escolheu'}, sem contar o INSS.</p></header>
+      <header class="bloco-cab"><p class="sobretitulo">Futuro</p><h2>Indicador de Independência Financeira</h2><p>Quanto do patrimônio necessário para viver de renda você terá ${ind.aposentado ? 'hoje' : 'na idade que escolheu'}, sem contar o INSS.</p></header>
       <div class="ind-grid">
-        <div class="radar-caixa">${svgRadarIndependencia(ind.pct)}</div>
+        <div class="indicador-caixa">${svgIndicadorIndependencia(ind.pct)}${statusPill(statusIndependencia(ind.pct))}</div>
         ${blocoIndependencia}
       </div>
       ${!ind.aposentado && ind.serie.length > 1 ? `<div class="proj">
@@ -632,7 +606,7 @@ function telaResultado() {
         <article class="frente frente-3"><h3><span>3</span>Atuar junto com a Life</h3><ul>${res.plano.juntos.length
           ? res.plano.juntos.map(o => `<li><span class="plano-ico">${ICO.juntos}</span><div><span class="produto">${o.produto}</span><b>${o.titulo}</b><p>${o.texto}</p></div></li>`).join('')
           : `<li><span class="plano-ico">${ICO.juntos}</span><div><b>Acompanhamento</b><p>Seu cenário é sólido. O próximo nível é otimizar impostos, sucessão e a rentabilidade da carteira.</p></div></li>`}</ul>
-          ${botaoEspecialista('btn btn-primario btn-bloco', 'Montar esse plano com a Life', 'plano')}
+          ${botaoAgendar('btn btn-primario btn-bloco', 'Montar esse plano com a Life', 'plano')}
         </article>
       </div>
     </section>
@@ -640,10 +614,11 @@ function telaResultado() {
     <section class="completo">
       <div class="completo-texto">
         <p class="sobretitulo">Versão completa</p>
-        <h2>Isto foi o Pocket. O diagnóstico completo vai muito além.</h2>
+        <h2>Este foi o Diagnóstico Dinâmico. O Completo vai muito além.</h2>
         <p>Com um planejador Life, o seu diagnóstico ganha os números exatos, os 20 sub-pilares e um plano de ação com prazos e acompanhamento.</p>
         <div class="completo-acoes">
-          ${botaoEspecialista('btn btn-primario btn-grande', 'Quero o diagnóstico completo', 'completo')}
+          ${botaoAgendar('btn btn-primario btn-grande', 'Agendar Diagnóstico Completo', 'completo')}
+          ${botaoEspecialista('btn btn-fantasma btn-grande', 'Falar com especialista', 'completo')}
         </div>
       </div>
       <ul class="bloqueados">${[
@@ -677,7 +652,8 @@ function telaResultado() {
 }
 
 function encerrarSessao() {
-  estado.lead = null; estado.respostas = {}; estado.resultado = null; estado.atual = null; estado.tempos = {};
+  estado.lead = null; estado.respostas = {}; estado.resultado = null; estado.atual = null; estado.tempos = {}; estado.agendamento = null;
+  sessaoId = novaSessao();
   Protecao.desativar();
   telaInicio();
 }
@@ -699,10 +675,10 @@ function iniciarApp() {
     }
   });
   document.addEventListener('click', e => {
-    const a = e.target.closest('[data-modal-especialista]');
-    if (a) { e.preventDefault(); abrirModalEspecialista(); }
-    const r = e.target.closest('[data-rastrear]');
-    if (r && estado.lead) { rastrear(r.dataset.rastrear); enviarLead('clicou_' + r.dataset.rastrear); }
+    const c = e.target.closest('[data-contato]');
+    if (c) { e.preventDefault(); abrirContato(c.dataset.contato || estado.tela); return; }
+    const a = e.target.closest('[data-agendar]');
+    if (a) { e.preventDefault(); abrirAgenda(a.dataset.agendar || estado.tela); }
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !$('#modal').hidden) { $('#modal').hidden = true; $('#modal').innerHTML = ''; return; }

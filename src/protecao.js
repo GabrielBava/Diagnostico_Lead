@@ -14,7 +14,7 @@ const Protecao = (() => {
   let liberarApos = 0;
   let opcoes = {};
   let marcaTexto = '';
-  const AVISO_COPIA = 'Conteúdo protegido - Diagnóstico LIFE Pocket. Fale com um especialista do Grupo Life Brasil.';
+  const AVISO_COPIA = 'Conteúdo protegido - Diagnóstico LIFE Dinâmico. Fale com um especialista do Grupo Life Brasil.';
 
   const ehCampo = el => !!(el && el.closest && el.closest('input, textarea, select, [contenteditable="true"]'));
   const escudo = () => document.getElementById('escudo');

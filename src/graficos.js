@@ -1,6 +1,6 @@
 /* =====================================================================
    GRÁFICOS (SVG feitos à mão, sem bibliotecas)
-   Estrela LIFE · Radar de Independência · Projeção · Orçamento 50-30-20
+   Estrela LIFE · Indicador de Independência · Projeção · Orçamento 50-30-20
    ===================================================================== */
 
 const COR = {
@@ -49,26 +49,32 @@ function svgEstrelaLife(pilares) {
   return s + '</svg>';
 }
 
-/* ---------------- Radar de Independência ---------------- */
-function svgRadarIndependencia(pct) {
-  const S = 260, c = S / 2, R = 104;
-  const v = Math.max(0, pct);
-  const frac = Math.min(1, v);
-  const circ = 2 * Math.PI * R;
+/* ---------------- Indicador de Independência (medidor semicircular) ---------------- */
+function svgIndicadorIndependencia(pct) {
+  const W = 300, H = 212, cx = 150, cy = 176, R = 116, esp = 18;
+  const v = Math.max(0, pct), frac = Math.min(1, v);
   const texto = v >= 9.99 ? '+999%' : Math.round(v * 100) + '%';
-  const a = (-90 + frac * 360) * Math.PI / 180;
-  const bx = c + R * Math.cos(a), by = c + R * Math.sin(a);
-  let s = `<svg viewBox="0 0 ${S} ${S}" class="radar-svg" role="img" aria-label="Radar de Independência Financeira: ${texto} do patrimônio necessário">`;
-  s += `<defs><linearGradient id="gradRadar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f39a3c"/><stop offset="1" stop-color="#d9452b"/></linearGradient>
-    <radialGradient id="gradVarre" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ea6a2a" stop-opacity="0"/><stop offset="1" stop-color="#ea6a2a" stop-opacity=".35"/></radialGradient></defs>`;
-  [0.3, 0.55, 0.8].forEach(f => { s += `<circle cx="${c}" cy="${c}" r="${(R * f).toFixed(1)}" class="radar-anel"/>`; });
-  s += `<line x1="${c}" y1="${c - R}" x2="${c}" y2="${c + R}" class="radar-anel"/><line x1="${c - R}" y1="${c}" x2="${c + R}" y2="${c}" class="radar-anel"/>`;
-  s += `<g class="radar-varredura"><path d="M${c},${c} L${c},${c - R * 0.8} A${R * 0.8},${R * 0.8} 0 0,1 ${(c + R * 0.8 * Math.sin(Math.PI / 4)).toFixed(1)},${(c - R * 0.8 * Math.cos(Math.PI / 4)).toFixed(1)} Z" fill="url(#gradVarre)"/></g>`;
-  s += `<circle cx="${c}" cy="${c}" r="${R}" class="radar-trilho"/>`;
-  s += `<circle cx="${c}" cy="${c}" r="${R}" class="radar-arco" stroke="url(#gradRadar)" stroke-dasharray="${(circ * frac).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 ${c} ${c})"/>`;
-  if (frac > 0.01) s += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="7" class="radar-blip"/>`;
-  s += `<text x="${c}" y="${c + 6}" text-anchor="middle" class="radar-num">${texto}</text>`;
-  s += `<text x="${c}" y="${c + 30}" text-anchor="middle" class="radar-sub">da meta</text>`;
+  const pt = (f, r) => { const a = Math.PI * (1 - f); return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; };
+  const arco = (f0, f1, r) => { const [x0, y0] = pt(f0, r), [x1, y1] = pt(f1, r); return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)}`; };
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="indicador-svg" role="img" aria-label="Indicador de Independência Financeira: ${texto} do patrimônio necessário">`;
+  s += `<defs><linearGradient id="gradIndicador" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9452b"/><stop offset=".6" stop-color="#ea6a2a"/><stop offset="1" stop-color="#f39a3c"/></linearGradient></defs>`;
+  /* faixas de leitura, as mesmas da Nota LIFE */
+  [[0, 0.445, COR.critico], [0.455, 0.745, COR.atencao], [0.755, 1, COR.ok]].forEach(([a, b, c]) => {
+    s += `<path d="${arco(a, b, R + 19)}" stroke="${c}" class="ind-zona"/>`;
+  });
+  s += `<path d="${arco(0, 1, R)}" class="ind-trilho" stroke-width="${esp}"/>`;
+  if (frac > 0.002) s += `<path d="${arco(0, frac, R)}" class="ind-valor" stroke="url(#gradIndicador)" stroke-width="${esp}"/>`;
+  [0, 0.25, 0.5, 0.75, 1].forEach(f => {
+    const [x0, y0] = pt(f, R - esp / 2 - 4), [x1, y1] = pt(f, R - esp / 2 - 10);
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" class="ind-marca"/>`;
+  });
+  const [mx, my] = pt(frac, R);
+  s += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="10" class="ind-marcador"/>`;
+  s += `<text x="${pt(0, R)[0].toFixed(1)}" y="${cy + 26}" text-anchor="middle" class="eixo-txt">0%</text>`;
+  s += `<text x="${pt(1, R)[0].toFixed(1)}" y="${cy + 26}" text-anchor="middle" class="eixo-txt">100%</text>`;
+  s += `<text x="${cx}" y="${pt(0.5, R + 32)[1].toFixed(1)}" text-anchor="middle" class="eixo-txt">50%</text>`;
+  s += `<text x="${cx}" y="${cy - 26}" text-anchor="middle" class="ind-num">${texto}</text>`;
+  s += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" class="ind-sub">da meta</text>`;
   return s + '</svg>';
 }
 

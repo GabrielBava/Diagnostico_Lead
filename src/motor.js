@@ -1,5 +1,5 @@
 /* =====================================================================
-   MOTOR DO DIAGNÓSTICO LIFE POCKET
+   MOTOR DO DIAGNÓSTICO LIFE DINÂMICO
    Perguntas, Estrela LIFE (8 pilares), perfil financeiro, independência
    financeira, modelo 50-30-20 e plano em 3 frentes.
    Versão reduzida das regras do Diagnóstico LIFE completo.
@@ -14,45 +14,52 @@ const ETAPAS = [
   { id: 'relacao', nome: 'Você e o dinheiro', intro: 'Para fechar, como você se relaciona com o dinheiro.' }
 ];
 
-const BENS_OBJ = ['imovel', 'veiculo', 'reforma', 'negocio'];
-
 const PERGUNTAS = [
   /* ---------------- Você ---------------- */
-  { id: 'idade', etapa: 'voce', tipo: 'numero', titulo: 'Qual é a sua idade?',
+  { id: 'idade', etapa: 'voce', tipo: 'numero', titulo: 'Quantos anos você tem?',
     min: 18, max: 90, sufixo: 'anos', placeholder: '35' },
-  { id: 'familia', etapa: 'voce', tipo: 'escolha', titulo: 'Com quem você divide a vida financeira?',
+  { id: 'familia', etapa: 'voce', tipo: 'escolha', titulo: 'Quem faz parte da sua vida financeira hoje?',
     opcoes: [
       { v: 'so', t: 'Só eu' },
       { v: 'casal', t: 'Eu e meu cônjuge' },
       { v: 'casal_filhos', t: 'Eu, meu cônjuge e filhos' },
       { v: 'filhos', t: 'Eu e meus filhos' }
     ] },
-  { id: 'dependentes', etapa: 'voce', tipo: 'escolha', titulo: 'Quantas pessoas dependem financeiramente de você?',
-    ajuda: 'Filhos, cônjuge sem renda, pais ou outros familiares.',
+  { id: 'dependentes', etapa: 'voce', tipo: 'escolha', titulo: 'Alguém depende da sua renda?',
+    ajuda: 'Filhos, pais ou outros familiares.',
     opcoes: [
-      { v: 0, t: 'Nenhuma' }, { v: 1, t: '1 pessoa' }, { v: 2, t: '2 pessoas' }, { v: 3, t: '3 ou mais' }
+      { v: 0, t: 'Ninguém' }, { v: 1, t: '1 pessoa' }, { v: 2, t: '2 pessoas' }, { v: 3, t: '3 ou mais' }
     ] },
-  { id: 'trabalho', etapa: 'voce', tipo: 'escolha', titulo: 'Como você trabalha hoje?',
+  { id: 'trabalho', etapa: 'voce', tipo: 'escolha', titulo: 'De onde vem a sua renda principal?',
     opcoes: [
       { v: 'clt', t: 'Carteira assinada (CLT)' },
-      { v: 'servidor', t: 'Servidor público' },
-      { v: 'empresario', t: 'Empresário' },
-      { v: 'autonomo', t: 'Autônomo ou profissional liberal' },
-      { v: 'aposentado', t: 'Aposentado' }
+      { v: 'servidor', t: 'Serviço público' },
+      { v: 'empresario', t: 'Empresa própria' },
+      { v: 'autonomo', t: 'Trabalho autônomo ou liberal' },
+      { v: 'aposentado', t: 'Aposentadoria' }
     ] },
 
   /* ---------------- Seu mês ---------------- */
-  { id: 'renda', etapa: 'mes', tipo: 'moeda', titulo: 'Qual é a renda líquida mensal da família?',
-    ajuda: 'O que cai na conta depois dos impostos, somando quem divide as contas com você.',
-    min: 500, atalhos: [5000, 10000, 20000, 40000] },
-  { id: 'gastos', etapa: 'mes', tipo: 'moeda', titulo: 'Quanto a família gasta por mês, em média?',
-    ajuda: 'Casa, mercado, escola, saúde, lazer e cartão. Deixe de fora as parcelas de financiamentos e empréstimos: elas vêm na próxima pergunta.',
-    min: 300, atalhos: [4000, 8000, 15000, 30000] },
-  { id: 'parcelas', etapa: 'mes', tipo: 'moeda', titulo: 'E quanto vai por mês para parcelas?',
-    ajuda: 'Financiamento de imóvel ou carro, empréstimos e consórcios.',
-    min: 0, atalhos: [0, 1000, 3000, 6000], rotuloZero: 'Não tenho' },
-  { id: 'essencial', etapa: 'mes', tipo: 'escolha', titulo: 'Desse gasto do mês, quanto é essencial?',
-    ajuda: 'Essencial é moradia, mercado, saúde, escola e transporte. O resto é estilo de vida: restaurantes, viagens, compras e assinaturas.',
+  { id: 'renda', etapa: 'mes', tipo: 'moeda', titulo: 'Em média, qual é a renda mensal da família?',
+    ajuda: 'Pode ser aproximada: o valor que entra já com os descontos. Escolha uma faixa ou digite.',
+    min: 500, faixas: [
+      { t: 'Até R$ 5 mil', v: 4000 }, { t: 'R$ 5 a 10 mil', v: 7500 }, { t: 'R$ 10 a 20 mil', v: 15000 },
+      { t: 'R$ 20 a 40 mil', v: 30000 }, { t: 'Acima de R$ 40 mil', v: 50000 }
+    ] },
+  { id: 'gastos', etapa: 'mes', tipo: 'moeda', titulo: 'E quanto costuma sair por mês com o custo de vida?',
+    ajuda: 'Casa, mercado, escola, saúde, lazer e cartão. As parcelas de financiamento entram na próxima.',
+    min: 300, faixas: [
+      { t: 'Até R$ 4 mil', v: 3000 }, { t: 'R$ 4 a 8 mil', v: 6000 }, { t: 'R$ 8 a 15 mil', v: 11500 },
+      { t: 'R$ 15 a 30 mil', v: 22500 }, { t: 'Acima de R$ 30 mil', v: 38000 }
+    ] },
+  { id: 'parcelas', etapa: 'mes', tipo: 'moeda', titulo: 'Há parcelas fixas no seu mês?',
+    ajuda: 'Financiamento de casa ou carro, empréstimos ou consórcios.',
+    min: 0, faixas: [
+      { t: 'Nenhuma', v: 0 }, { t: 'Até R$ 1 mil', v: 700 }, { t: 'R$ 1 a 3 mil', v: 2000 },
+      { t: 'R$ 3 a 6 mil', v: 4500 }, { t: 'Acima de R$ 6 mil', v: 8000 }
+    ] },
+  { id: 'essencial', etapa: 'mes', tipo: 'escolha', titulo: 'Quanto do custo de vida vai para o essencial?',
+    ajuda: 'Essencial é moradia, mercado, saúde, escola e transporte. O restante é estilo de vida.',
     opcoes: [
       { v: 85, t: 'Quase tudo', d: 'mais de 80%' },
       { v: 70, t: 'A maior parte', d: 'entre 60% e 80%' },
@@ -60,18 +67,18 @@ const PERGUNTAS = [
       { v: 35, t: 'Menos da metade', d: 'menos de 40%' }
     ] },
   { id: 'dividaCara', etapa: 'mes', tipo: 'escolha',
-    titulo: 'Nos últimos meses, você usou cheque especial, rotativo do cartão ou empréstimo pessoal?',
+    titulo: 'Quando o mês aperta, você recorre a cheque especial, rotativo do cartão ou empréstimo?',
     opcoes: [
-      { v: 'nao', t: 'Não usei' },
-      { v: 'as_vezes', t: 'Usei algumas vezes' },
-      { v: 'sempre', t: 'Sim, quase todo mês' }
+      { v: 'nao', t: 'Não costumo precisar' },
+      { v: 'as_vezes', t: 'De vez em quando' },
+      { v: 'sempre', t: 'Sim, com frequência' }
     ] },
 
   /* ---------------- Proteção ---------------- */
   { id: 'reserva', etapa: 'protecao', tipo: 'escolha',
-    titulo: 'Se a renda parasse hoje, por quanto tempo vocês se manteriam com o dinheiro guardado?',
+    titulo: 'Se a renda parasse hoje, por quanto tempo a sua reserva manteria a casa?',
     opcoes: [
-      { v: 0, t: 'Não tenho reserva' },
+      { v: 0, t: 'Ainda não tenho reserva' },
       { v: 1.5, t: 'Menos de 3 meses' },
       { v: 4.5, t: 'De 3 a 6 meses' },
       { v: 9, t: 'De 6 a 12 meses' },
@@ -79,39 +86,35 @@ const PERGUNTAS = [
     ] },
   { id: 'seguroVida', etapa: 'protecao', tipo: 'escolha', titulo: 'Você tem seguro de vida?',
     opcoes: [
-      { v: 'individual', t: 'Sim, contratado por mim' },
+      { v: 'individual', t: 'Sim, contratei um' },
       { v: 'empresa', t: 'Só o da empresa ou do banco' },
-      { v: 'nao', t: 'Não tenho' }
+      { v: 'nao', t: 'Ainda não' }
     ] },
   { id: 'invalidez', etapa: 'protecao', tipo: 'escolha',
-    titulo: 'Se você ficar afastado por doença ou acidente, como fica a sua renda?',
+    titulo: 'Se precisasse se afastar do trabalho por saúde, a sua renda estaria protegida?',
     mostrarSe: r => r.trabalho !== 'aposentado',
     opcoes: [
-      { v: 'coberta', t: 'Tenho seguro que cobre', d: 'invalidez, doenças graves ou DIT' },
-      { v: 'inss', t: 'Dependo só do INSS' },
-      { v: 'nao_sei', t: 'Não sei ou não tenho cobertura' }
-    ] },
-  { id: 'bensSeguro', etapa: 'protecao', tipo: 'escolha', titulo: 'Seu imóvel e seu carro têm seguro?',
-    opcoes: [
-      { v: 'todos', t: 'Sim, todos' },
-      { v: 'alguns', t: 'Só alguns' },
-      { v: 'nenhum', t: 'Nenhum tem seguro' },
-      { v: 'sem_bens', t: 'Não tenho imóvel nem carro' }
+      { v: 'coberta', t: 'Sim, tenho seguro para isso', d: 'invalidez, doenças graves ou DIT' },
+      { v: 'inss', t: 'Contaria só com o INSS' },
+      { v: 'nao_sei', t: 'Não sei dizer' }
     ] },
   { id: 'sucessao', etapa: 'protecao', tipo: 'escolha',
-    titulo: 'Se algo acontecer com você, sua família sabe como o patrimônio passa para ela?',
-    ajuda: 'Inventário, custos, documentos e quem recebe o quê.',
+    titulo: 'A sua família sabe como o patrimônio seria transmitido, se precisasse?',
+    ajuda: 'Inventário, custos e quem recebe o quê.',
     opcoes: [
-      { v: 'planejado', t: 'Sim, já fiz um planejamento' },
-      { v: 'pensou', t: 'Já pensei, mas não fiz nada' },
-      { v: 'nunca', t: 'Nunca pensei nisso' }
+      { v: 'planejado', t: 'Sim, já está planejado' },
+      { v: 'pensou', t: 'Já pensei, mas não organizei' },
+      { v: 'nunca', t: 'Ainda não pensei nisso' }
     ] },
 
   /* ---------------- Patrimônio ---------------- */
-  { id: 'investido', etapa: 'patrimonio', tipo: 'moeda', titulo: 'Quanto você tem guardado e investido hoje?',
-    ajuda: 'Poupança, aplicações e previdência privada. Não conte imóveis e veículos.',
-    min: 0, atalhos: [0, 10000, 50000, 200000], rotuloZero: 'Nada ainda' },
-  { id: 'ondeInveste', etapa: 'patrimonio', tipo: 'multipla', titulo: 'Onde está esse dinheiro?',
+  { id: 'investido', etapa: 'patrimonio', tipo: 'moeda', titulo: 'Quanto você tem guardado ou investido hoje?',
+    ajuda: 'Poupança, aplicações e previdência. Imóveis e carros vêm a seguir.',
+    min: 0, faixas: [
+      { t: 'Ainda nada', v: 0 }, { t: 'Até R$ 20 mil', v: 10000 }, { t: 'R$ 20 a 100 mil', v: 60000 },
+      { t: 'R$ 100 a 500 mil', v: 300000 }, { t: 'Acima de R$ 500 mil', v: 800000 }
+    ] },
+  { id: 'ondeInveste', etapa: 'patrimonio', tipo: 'multipla', titulo: 'Onde esse dinheiro está aplicado?',
     ajuda: 'Marque todas as opções que você usa.',
     mostrarSe: r => (r.investido || 0) > 0,
     opcoes: [
@@ -122,19 +125,36 @@ const PERGUNTAS = [
       { v: 'previdencia', t: 'Previdência privada' },
       { v: 'exterior', t: 'Exterior ou criptoativos' }
     ] },
-  { id: 'aporte', etapa: 'patrimonio', tipo: 'moeda', titulo: 'Quanto você consegue investir por mês?',
-    ajuda: 'Em média, o que de fato vai para investimentos.',
-    min: 0, atalhos: [0, 500, 1500, 3000], rotuloZero: 'Nada hoje' },
-  { id: 'bens', etapa: 'patrimonio', tipo: 'grupo', titulo: 'E os seus bens?',
-    ajuda: 'Some imóveis e veículos pelo valor de mercado aproximado.',
-    mostrarSe: r => r.bensSeguro !== 'sem_bens',
+  { id: 'aporte', etapa: 'patrimonio', tipo: 'moeda', titulo: 'Quanto você consegue guardar por mês?',
+    ajuda: 'Em média, o que de fato vai para a reserva ou para investimentos.',
+    min: 0, faixas: [
+      { t: 'Nada no momento', v: 0 }, { t: 'Até R$ 500', v: 300 }, { t: 'R$ 500 a 2 mil', v: 1200 },
+      { t: 'R$ 2 a 5 mil', v: 3500 }, { t: 'Acima de R$ 5 mil', v: 7000 }
+    ] },
+  { id: 'temBens', etapa: 'patrimonio', tipo: 'escolha', titulo: 'Você tem imóvel ou carro?',
+    opcoes: [
+      { v: 'ambos', t: 'Tenho imóvel e carro' },
+      { v: 'imovel', t: 'Só imóvel' },
+      { v: 'carro', t: 'Só carro' },
+      { v: 'nenhum', t: 'Nenhum dos dois' }
+    ] },
+  { id: 'bens', etapa: 'patrimonio', tipo: 'grupo', titulo: 'Quanto valem, aproximadamente?',
+    ajuda: 'Valor de mercado de hoje, somando tudo.',
+    mostrarSe: r => r.temBens && r.temBens !== 'nenhum',
     campos: [
-      { id: 'valorBens', tipo: 'moeda', rotulo: 'Quanto valem seus imóveis e veículos?', min: 0 },
-      { id: 'saldoDevedor', tipo: 'moeda', rotulo: 'Quanto ainda falta pagar deles?', min: 0, rotuloZero: 'Nada, está quitado' }
+      { id: 'valorBens', tipo: 'moeda', rotulo: 'Valor dos bens', min: 0 },
+      { id: 'saldoDevedor', tipo: 'moeda', rotulo: 'Quanto ainda falta pagar', min: 0, rotuloZero: 'Já está quitado' }
+    ] },
+  { id: 'bensSeguro', etapa: 'patrimonio', tipo: 'escolha', titulo: 'Esses bens têm seguro?',
+    mostrarSe: r => r.temBens && r.temBens !== 'nenhum',
+    opcoes: [
+      { v: 'todos', t: 'Sim, todos' },
+      { v: 'alguns', t: 'Só alguns' },
+      { v: 'nenhum', t: 'Nenhum tem' }
     ] },
 
   /* ---------------- Objetivos e futuro ---------------- */
-  { id: 'objetivos', etapa: 'futuro', tipo: 'multipla', max: 3, titulo: 'Quais são as suas próximas conquistas?',
+  { id: 'objetivos', etapa: 'futuro', tipo: 'multipla', max: 3, titulo: 'Quais conquistas estão nos seus planos?',
     ajuda: 'Escolha até 3.',
     opcoes: [
       { v: 'imovel', t: 'Imóvel próprio ou maior' },
@@ -146,17 +166,25 @@ const PERGUNTAS = [
       { v: 'aposentadoria', t: 'Aposentadoria tranquila' },
       { v: 'dividas', t: 'Quitar dívidas' }
     ] },
-  { id: 'clareza', etapa: 'futuro', tipo: 'escolha',
-    titulo: 'Você já sabe quanto custa e quando quer realizar o seu principal objetivo?',
+  { id: 'expandir', etapa: 'futuro', tipo: 'escolha', titulo: 'Você pensa em adquirir um bem ou ampliar o seu patrimônio?',
+    ajuda: 'Imóvel, carro, terreno, ponto comercial ou investimento no negócio.',
     opcoes: [
-      { v: 'sim', t: 'Sim, tenho valor e prazo' },
-      { v: 'ideia', t: 'Tenho uma ideia aproximada' },
-      { v: 'nao', t: 'Ainda não' }
+      { v: 24, t: 'Sim, nos próximos 2 anos' },
+      { v: 48, t: 'Sim, em 3 a 5 anos' },
+      { v: 96, t: 'Sim, mais para frente' },
+      { v: 'nao', t: 'Não por enquanto' }
     ] },
-  { id: 'comoConquistar', etapa: 'futuro', tipo: 'escolha', titulo: 'Como pretende conquistar esses bens?',
-    mostrarSe: r => (r.objetivos || []).some(o => BENS_OBJ.includes(o)),
+  { id: 'valorDesejo', etapa: 'futuro', tipo: 'moeda', titulo: 'Qual é o valor aproximado desse objetivo?',
+    ajuda: 'Uma estimativa já ajuda a calcular o caminho até ele.',
+    mostrarSe: r => r.expandir !== undefined && r.expandir !== 'nao',
+    min: 5000, faixas: [
+      { t: 'Até R$ 100 mil', v: 70000 }, { t: 'R$ 100 a 300 mil', v: 200000 }, { t: 'R$ 300 a 600 mil', v: 450000 },
+      { t: 'R$ 600 mil a 1 milhão', v: 800000 }, { t: 'Acima de R$ 1 milhão', v: 1500000 }
+    ] },
+  { id: 'comoConquistar', etapa: 'futuro', tipo: 'escolha', titulo: 'Como imagina fazer essa aquisição?',
+    mostrarSe: r => r.expandir !== undefined && r.expandir !== 'nao',
     opcoes: [
-      { v: 'avista', t: 'Juntando e pagando à vista' },
+      { v: 'avista', t: 'Juntando para pagar à vista' },
       { v: 'financiamento', t: 'Financiamento' },
       { v: 'consorcio', t: 'Consórcio' },
       { v: 'nao_sei', t: 'Ainda não sei' }
@@ -164,7 +192,7 @@ const PERGUNTAS = [
   { id: 'aposentadoria', etapa: 'futuro', tipo: 'grupo', titulo: 'Como você imagina a sua aposentadoria?',
     mostrarSe: r => r.trabalho !== 'aposentado',
     campos: [
-      { id: 'idadeAposentar', tipo: 'faixa', rotulo: 'Com quantos anos quer parar de depender do trabalho?',
+      { id: 'idadeAposentar', tipo: 'faixa', rotulo: 'Com quantos anos gostaria de não depender mais do trabalho?',
         min: 40, max: 75, padrao: 60, sufixo: 'anos' },
       { id: 'estilo', tipo: 'chips', rotulo: 'Com qual padrão de vida?', padrao: 1,
         opcoes: [
@@ -174,32 +202,32 @@ const PERGUNTAS = [
     ] },
 
   /* ---------------- Você e o dinheiro ---------------- */
-  { id: 'ir', etapa: 'relacao', tipo: 'escolha', titulo: 'Como você declara o Imposto de Renda?',
+  { id: 'ir', etapa: 'relacao', tipo: 'escolha', titulo: 'Como você costuma declarar o Imposto de Renda?',
     opcoes: [
       { v: 'completa', t: 'Modelo completo' },
       { v: 'simplificada', t: 'Modelo simplificado' },
       { v: 'nao_declara', t: 'Não declaro' },
       { v: 'nao_sei', t: 'Não sei' }
     ] },
-  { id: 'controle', etapa: 'relacao', tipo: 'escolha', titulo: 'Como você acompanha os seus gastos?',
+  { id: 'controle', etapa: 'relacao', tipo: 'escolha', titulo: 'Como você acompanha os gastos do mês?',
     opcoes: [
-      { v: 'app', t: 'Planilha ou aplicativo, todo mês' },
+      { v: 'app', t: 'Com planilha ou aplicativo' },
       { v: 'cabeca', t: 'De cabeça, mais ou menos' },
-      { v: 'nao', t: 'Não acompanho' }
+      { v: 'nao', t: 'Ainda não acompanho' }
     ] },
-  { id: 'sentimento', etapa: 'relacao', tipo: 'escolha', titulo: 'Como você se sente hoje em relação ao dinheiro?',
+  { id: 'sentimento', etapa: 'relacao', tipo: 'escolha', titulo: 'Qual frase mais combina com você hoje?',
     opcoes: [
-      { v: 'tranquilo', t: 'Tranquilo e no controle' },
-      { v: 'sem_plano', t: 'Organizado, mas sem um plano para o futuro' },
-      { v: 'apertado', t: 'Inseguro, as contas apertam' },
-      { v: 'perdido', t: 'Perdido, não sei por onde começar' }
+      { v: 'tranquilo', t: 'Estou tranquilo e no controle' },
+      { v: 'sem_plano', t: 'Sou organizado, mas sem um plano para o futuro' },
+      { v: 'apertado', t: 'As contas apertam e isso me preocupa' },
+      { v: 'perdido', t: 'Não sei bem por onde começar' }
     ] },
   { id: 'conhecimento', etapa: 'relacao', tipo: 'escala',
-    titulo: 'Que nota você dá ao seu conhecimento sobre planejamento financeiro e patrimonial?',
-    min: 0, max: 10, rotulos: ['Nenhum', 'Intermediário', 'Avançado'] },
+    titulo: 'De 0 a 10, quanto você se sente seguro sobre planejamento financeiro?',
+    min: 0, max: 10, rotulos: ['Nada seguro', 'Mais ou menos', 'Muito seguro'] },
   { id: 'prioridade', etapa: 'relacao', tipo: 'escolha', titulo: 'Se pudesse resolver uma coisa agora, qual seria?',
     opcoes: [
-      { v: 'orcamento', t: 'Sair do aperto e organizar o orçamento' },
+      { v: 'orcamento', t: 'Organizar o orçamento e sair do aperto' },
       { v: 'protecao', t: 'Proteger a minha família' },
       { v: 'investir', t: 'Fazer o meu dinheiro render mais' },
       { v: 'bens', t: 'Conquistar um imóvel ou um carro' },
@@ -207,6 +235,29 @@ const PERGUNTAS = [
       { v: 'impostos', t: 'Pagar menos imposto e planejar a sucessão' }
     ] }
 ];
+
+/* Respostas em texto legível (para a planilha) */
+function respostasLegiveis(r) {
+  const out = {};
+  const textoOpcao = (opcoes, v) => { const o = opcoes.find(x => x.v === v); return o ? o.t : (v ?? ''); };
+  PERGUNTAS.forEach(q => {
+    if (q.tipo === 'grupo') {
+      q.campos.forEach(c => {
+        const v = r[c.id];
+        if (v === undefined || v === null) return;
+        out[c.id] = c.tipo === 'moeda' ? fmtMoeda(v) : c.tipo === 'chips' ? textoOpcao(c.opcoes, v) : `${v} ${c.sufixo || ''}`.trim();
+      });
+      return;
+    }
+    const v = r[q.id];
+    if (v === undefined || v === null) return;
+    if (q.tipo === 'escolha') out[q.id] = textoOpcao(q.opcoes, v);
+    else if (q.tipo === 'multipla') out[q.id] = (v || []).map(x => textoOpcao(q.opcoes, x)).join(', ');
+    else if (q.tipo === 'moeda') out[q.id] = fmtMoeda(v);
+    else out[q.id] = String(v);
+  });
+  return out;
+}
 
 /* ---------------- utilitários ---------------- */
 const clamp01 = x => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
@@ -261,7 +312,7 @@ function calcularDiagnostico(r) {
   const reservaAtual = Math.min(despesas * reservaMeses, Math.max(Number(r.investido) || 0, despesas * reservaMeses));
   const investido = Math.max(0, Number(r.investido) || 0);
   const aporte = Math.max(0, Number(r.aporte) || 0);
-  const temBens = r.bensSeguro !== 'sem_bens';
+  const temBens = !!r.temBens && r.temBens !== 'nenhum';
   const valorBens = temBens ? Math.max(0, Number(r.valorBens) || 0) : 0;
   const saldoDevedor = temBens ? Math.min(valorBens || Infinity, Math.max(0, Number(r.saldoDevedor) || 0)) : 0;
   const patrimonioBruto = investido + valorBens;
@@ -271,7 +322,10 @@ function calcularDiagnostico(r) {
   const aposentado = r.trabalho === 'aposentado';
   const temDependentes = (Number(r.dependentes) || 0) > 0 || (r.familia && r.familia !== 'so');
   const objetivos = r.objetivos || [];
-  const querBens = objetivos.some(o => BENS_OBJ.includes(o));
+  /* expansão: pretende adquirir um bem, em quanto tempo e por quanto */
+  const querBens = r.expandir !== undefined && r.expandir !== 'nao';
+  const prazoBem = querBens ? Number(r.expandir) || 48 : 0;
+  const valorDesejo = querBens ? Math.max(0, Number(r.valorDesejo) || 0) : 0;
   const custoInventario = patrimonioLiquido > 0 ? patrimonioLiquido * PR.custoInventario : 0;
 
   /* -------- independência financeira -------- */
@@ -303,6 +357,7 @@ function calcularDiagnostico(r) {
     }
   }
   const independencia = necessario > 0 ? projetado / necessario : 1;
+  const aporteBem = querBens && valorDesejo > 0 ? aporteParaMeta(valorDesejo, 0, iMes, prazoBem) : 0;
   const rendaProjetada = projetado * PR.taxaRetirada / 12;
 
   /* -------- Estrela LIFE: 8 pilares -------- */
@@ -310,8 +365,8 @@ function calcularDiagnostico(r) {
   const nDivida = { nao: 1, as_vezes: 0.4, sempre: 0 }[r.dividaCara];
   const nVida = { individual: 1, empresa: 0.35, nao: 0 }[r.seguroVida];
   const nInvalidez = aposentado ? null : { coberta: 1, inss: 0.25, nao_sei: 0 }[r.invalidez];
-  const nBensSeg = { todos: 1, alguns: 0.5, nenhum: 0, sem_bens: null }[r.bensSeguro];
-  const nClareza = objetivos.length ? { sim: 1, ideia: 0.55, nao: 0.15 }[r.clareza] : 0.1;
+  const nBensSeg = temBens ? { todos: 1, alguns: 0.5, nenhum: 0 }[r.bensSeguro] : null;
+  const nClareza = querBens ? (valorDesejo > 0 ? 1 : 0.6) : objetivos.length ? 0.5 : 0.1;
   const nConquista = querBens ? { avista: 1, consorcio: 1, nao_sei: 0.4, financiamento: 0.1 }[r.comoConquistar] : null;
   const nSucessao = { planejado: 1, pensou: 0.35, nunca: 0 }[r.sucessao];
   const classes = ['renda_fixa', 'fundos', 'acoes', 'previdencia', 'exterior'].filter(c => onde.includes(c)).length + (onde.includes('poupanca') ? 0.5 : 0);
@@ -345,7 +400,7 @@ function calcularDiagnostico(r) {
       descricao: 'Sonhos com valor, prazo e dinheiro separado.',
       subs: [
         nClareza,
-        ponderada([[clamp01(aporte / (0.15 * renda)), 0.6], [nConquista, 0.4]])
+        ponderada([[aporteBem > 0 ? clamp01(aporte / aporteBem) : clamp01(aporte / (0.15 * renda)), 0.6], [nConquista, 0.4]])
       ] },
     { id: 'acumulo', nome: 'Acúmulo de Capital', curto: 'Acúmulo', max: 10,
       descricao: 'O dinheiro se acumula sem depender de crédito caro.',
@@ -444,9 +499,11 @@ function calcularDiagnostico(r) {
     texto: 'Concentrar tudo em um só tipo de aplicação aumenta o risco e limita o retorno.' });
   if (r.seguroVida === 'empresa') ajustes.push({ peso: 50, titulo: 'Ter um seguro de vida seu',
     texto: 'O seguro da empresa acaba quando você sai dela e quase nunca cobre o necessário.' });
-  if (r.bensSeguro === 'alguns' || r.bensSeguro === 'nenhum') ajustes.push({ peso: 40, titulo: 'Segurar os bens descobertos',
+  if (temBens && (r.bensSeguro === 'alguns' || r.bensSeguro === 'nenhum')) ajustes.push({ peso: 40, titulo: 'Segurar os bens descobertos',
     texto: `Há bens sem seguro${valorBens > 0 ? ` em um patrimônio de ${fmtMoeda(valorBens, true)}` : ''}. Um imprevisto vira prejuízo.` });
-  if (r.clareza !== 'sim') ajustes.push({ peso: 42, titulo: 'Dar valor e prazo aos objetivos',
+  if (querBens && aporteBem > 0 && aporte < aporteBem && sobra > 0) ajustes.push({ peso: 56, titulo: 'Separar o dinheiro do objetivo',
+    texto: `Para chegar a ${fmtMoeda(valorDesejo, true)} em ${prazoBem / 12 >= 1 ? Math.round(prazoBem / 12) + ' anos' : prazoBem + ' meses'}, o ideal é guardar cerca de ${fmtMoeda(aporteBem)} por mês para ele.` });
+  if (!querBens && objetivos.length) ajustes.push({ peso: 42, titulo: 'Dar valor e prazo aos objetivos',
     texto: 'Objetivo sem número vira desejo. Com valor e prazo, dá para calcular quanto separar por mês.' });
   if (r.controle !== 'app') ajustes.push({ peso: 38, titulo: 'Acompanhar os gastos todo mês',
     texto: 'Quem mede o que gasta encontra, em média, sobras que não via.' });
@@ -467,9 +524,14 @@ function calcularDiagnostico(r) {
   const apertado = sobra < 0 || r.dividaCara === 'sempre' || comprometimento > PR.limiteParcelas;
   if (apertado) op({ chave: 'planejamento', produto: 'Planejamento financeiro', titulo: 'Orçamento sob controle',
     texto: 'Reorganizar as despesas e trocar dívidas caras por crédito mais barato, com acompanhamento mês a mês.', potencial: 90 });
-  if (querBens && (r.comoConquistar === 'financiamento' || r.comoConquistar === 'nao_sei')) op({ chave: 'consorcio', produto: 'Consórcio', titulo: 'Bens sem juros',
-    texto: 'Consórcio planejado no lugar do financiamento: a carta de crédito compra o bem sem os juros bancários.',
-    potencial: (r.comoConquistar === 'financiamento' ? 88 : 78) - (apertado ? 22 : 0) });
+  const cartaTxt = valorDesejo > 0 ? `carta de crédito de cerca de ${fmtMoeda(valorDesejo, true)}` : 'carta de crédito';
+  if (querBens && r.comoConquistar !== 'avista') op({ chave: 'consorcio', produto: 'Consórcio', titulo: 'Conquista sem juros',
+    texto: r.comoConquistar === 'consorcio'
+      ? `Você já pensa em consórcio: a Life estrutura a ${cartaTxt}, o prazo e a estratégia de lance para o seu objetivo.`
+      : `Consórcio planejado no lugar do financiamento: uma ${cartaTxt} para conquistar o bem sem os juros bancários.`,
+    potencial: ({ financiamento: 90, consorcio: 84, nao_sei: 80 }[r.comoConquistar] || 76) + (prazoBem <= 24 ? 4 : 0) - (apertado ? 22 : 0) });
+  else if (querBens && valorDesejo > 0) op({ chave: 'investimentos', produto: 'Investimentos', titulo: 'Objetivo com data',
+    texto: `Uma carteira dedicada para juntar ${fmtMoeda(valorDesejo, true)} no prazo, com o rendimento trabalhando a seu favor.`, potencial: 66 });
   if (saldoDevedor > 0) op({ chave: 'consorcio', produto: 'Crédito', titulo: 'Revisar financiamentos',
     texto: `Portabilidade e amortização para reduzir o custo de ${fmtMoeda(saldoDevedor, true)} ainda financiados.`, potencial: 60 });
   if (!aposentado && independencia < 1) op({ chave: 'investimentos', produto: 'Investimentos', titulo: 'Plano de independência',
@@ -486,8 +548,8 @@ function calcularDiagnostico(r) {
     potencial: patrimonioBruto >= 1000000 ? 80 : 66 });
   if (patrimonioBruto >= 1000000) op({ chave: 'tributario', produto: 'Estrutura patrimonial', titulo: 'Holding e impostos',
     texto: `Com ${fmtMoeda(patrimonioBruto, true)} em patrimônio, vale avaliar holding familiar, planejamento tributário e proteção dos bens.`, potencial: 70 });
-  if (r.bensSeguro === 'alguns' || r.bensSeguro === 'nenhum') op({ chave: 'seguro', produto: 'Seguro patrimonial', titulo: 'Bens protegidos',
-    texto: 'Seguro residencial e auto: o patrimônio protegido por um custo baixo.', potencial: 62 });
+  if (temBens && (r.bensSeguro === 'alguns' || r.bensSeguro === 'nenhum')) op({ chave: 'seguro', produto: 'Seguro patrimonial', titulo: 'Bens protegidos',
+    texto: `Seguro ${r.temBens === 'carro' ? 'auto' : r.temBens === 'imovel' ? 'residencial' : 'residencial e auto'}: o patrimônio protegido por um custo baixo.`, potencial: 62 });
   if (investido > 0 && classes < 2) op({ chave: 'investimentos', produto: 'Investimentos', titulo: 'Carteira diversificada',
     texto: 'Carteira montada para o seu perfil, além da poupança e de um só produto.', potencial: 64 });
   ops.sort((a, b) => b.potencial - a.potencial);
@@ -504,6 +566,7 @@ function calcularDiagnostico(r) {
     renda, gastos, parcelas, despesas, sobra, taxaPoupanca, comprometimento,
     orcamento: { necessidades, desejos, futuro: futuroPct, deficit: Math.max(0, -sobra) / renda },
     reservaMeses, metaReserva, reservaAtual, investido, aporte, valorBens, saldoDevedor,
+    expansao: { querBens, prazoMeses: prazoBem, valorDesejo, aporteMensal: aporteBem, como: r.comoConquistar || '' },
     patrimonioBruto, patrimonioLiquido, custoInventario,
     independencia: { pct: independencia, idadeAlvo, anos, rendaDesejada, necessario, projetado, rendaProjetada, aporteNecessario, aporte, serie, aposentado },
     pilares, notaLife, statusGeral: statusDe(notaLife), perfil,

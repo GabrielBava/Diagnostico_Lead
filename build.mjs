@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =====================================================================
-   BUILD DO DIAGNÓSTICO LIFE POCKET (Node 18+, sem dependências)
+   BUILD DO DIAGNÓSTICO LIFE DINÂMICO (Node 18+, sem dependências)
 
    node build.mjs              → dist/  (produção: motor empacotado,
                                   trava de domínio e anti-inspeção ligados)
@@ -22,7 +22,7 @@ const DOMINIOS_PERMITIDOS = ['grupolifebrasil.com.br', 'localhost', '127.0.0.1']
 const raiz = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const modo = args.includes('--preview') ? 'preview' : args.includes('--dev') ? 'dev' : 'producao';
-const saida = modo === 'preview' ? args[args.indexOf('--preview') + 1] : join(raiz, modo === 'dev' ? 'dist-dev' : 'dist');
+const saida = args.includes('--saida') ? args[args.indexOf('--saida') + 1] : modo === 'preview' ? args[args.indexOf('--preview') + 1] : join(raiz, modo === 'dev' ? 'dist-dev' : 'dist');
 if (!saida) { console.error('Informe a pasta: node build.mjs --preview <pasta>'); process.exit(1); }
 
 const ler = p => readFileSync(join(raiz, p), 'utf8');
@@ -41,7 +41,9 @@ function enxugar(js) {
     .join('\n');
 }
 
-const partes = ['src/config.js', 'src/motor.js', 'src/graficos.js', 'src/protecao.js', 'src/app.js'].map(ler);
+const partes = ['src/config.js', 'src/motor.js', 'src/graficos.js', 'src/protecao.js', 'src/contato.js', 'src/app.js'].map(ler);
+/* --planilha <url>: troca a URL da planilha só neste build (útil para testes) */
+if (args.includes('--planilha')) partes[0] = partes[0].replace("urlPlanilha: ''", `urlPlanilha: ${JSON.stringify(args[args.indexOf('--planilha') + 1])}`);
 let js = '"use strict";\n' + partes.join('\n') + '\niniciarApp();';
 js = js.replaceAll('{{LOGO}}', LOGO).replaceAll('{{CORACAO}}', CORACAO);
 if (modo !== 'dev') js = enxugar(js);

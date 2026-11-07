@@ -1,4 +1,4 @@
-# Diagnóstico LIFE Pocket
+# Diagnóstico LIFE Dinâmico
 
 Versão de autoatendimento do Diagnóstico LIFE para leads do site do Grupo Life Brasil.
 O visitante entra pela página com o vídeo da família, informa nome, WhatsApp e e-mail,
@@ -6,26 +6,32 @@ responde cerca de 25 perguntas em 6 etapas (uns 5 minutos) e vê na tela:
 
 - **Nota LIFE** (0 a 100) e o **perfil financeiro** (Em déficit, Endividado, Consumidor, Equilibrado, Poupador ou Construtor de patrimônio)
 - **Estrela LIFE** com os 8 pilares do diagnóstico completo
-- **Radar de Independência Financeira** com a projeção do patrimônio até a idade escolhida
+- **Indicador de Independência Financeira** com a projeção do patrimônio até a idade escolhida
 - **Para onde vai a renda**, comparada ao modelo 50-30-20
 - **Plano em 3 frentes**: atuar de imediato, otimizar e atuar junto com a Life (seguro, consórcio, investimentos, previdência, sucessão)
 - Um convite para a **versão completa**, com o que só o planejador entrega
 
-O botão **Falar com especialista** aparece em todas as telas.
+O botão **Falar com especialista** aparece em todas as telas e abre três opções: **Ligação**, **WhatsApp** ou **E-mail**.
+O lead pode abrir o canal direto ou pedir para ser contatado (com o melhor período), e o pedido cai na planilha.
+
+No fim do resultado, **Agendar Diagnóstico Completo** abre a agenda: o lead escolhe formato, dia e horário livres,
+recebe a confirmação por e-mail e o convite do Google Agenda, e o agendamento entra na planilha.
 
 ## Publicar no site
 
-1. Ajuste `src/config.js` (WhatsApp do especialista, URL que recebe os leads, links).
-2. Se o site não for `grupolifebrasil.com.br`, ajuste `DOMINIOS_PERMITIDOS` no topo de `build.mjs`.
-3. Gere a versão final:
+1. Conecte a planilha (seção abaixo) e cole a URL em `src/config.js`, no campo `urlPlanilha`.
+2. Ainda em `src/config.js`, preencha `telefoneEspecialista` e `whatsappEspecialista` (só números, com 55 e DDD)
+   e ajuste a agenda: dias da semana, horários, duração e formatos.
+3. Se o site não for `grupolifebrasil.com.br`, ajuste `DOMINIOS_PERMITIDOS` no topo de `build.mjs`.
+4. Gere a versão final:
 
    ```bash
    node build.mjs
    ```
 
-4. Envie **apenas o conteúdo da pasta `dist/`** para o servidor, por exemplo em
+5. Envie **apenas o conteúdo da pasta `dist/`** para o servidor, por exemplo em
    `grupolifebrasil.com.br/diagnostico/`. O botão do site só precisa apontar para esse endereço.
-   Dá para medir campanhas pela URL: `.../diagnostico/?utm_source=instagram&utm_campaign=pocket`.
+   Dá para medir campanhas pela URL: `.../diagnostico/?utm_source=instagram&utm_campaign=dinamico`.
 
 Para testar no computador sem as travas de domínio e de inspeção:
 
@@ -39,22 +45,33 @@ cd dist-dev && python3 -m http.server 8080
 
 Depois abra `http://localhost:8080`.
 
-## Onde chegam os leads
+## Planilha no Google Drive
 
-Com `webhookLead` preenchido, a página envia um JSON em três momentos:
+O arquivo `integracoes/planilha-life.gs` transforma uma planilha do seu Drive no destino de tudo:
 
-| Evento | Quando |
+| Aba | O que entra |
 |---|---|
-| `lead_iniciou` | o lead preencheu nome, WhatsApp e e-mail |
-| `diagnostico_concluido` | terminou as perguntas; inclui respostas, Nota LIFE, pilares, oportunidades e a **temperatura** (quente, morno, frio) |
-| `clicou_especialista_*` | clicou para falar com um especialista |
+| **Leads** | uma linha por lead, atualizada a cada passo: dados de contato, todas as respostas em texto, Nota LIFE, perfil, os 8 pilares, independência, plano em 3 frentes, oportunidades por produto, temperatura (quente, morno, frio), tempo de resposta, origem da campanha, pedido de contato e agendamento |
+| **Pedidos de contato** | quem pediu ligação, WhatsApp ou e-mail, com o melhor período e o status (pendente) |
+| **Agendamentos** | Diagnósticos Completos agendados: data, hora, formato, observação do lead, Nota LIFE e se o e-mail foi enviado |
+| **Histórico** | cada evento recebido, com todos os dados |
 
-O envio também traz o comportamento do lead: tempo total, tempo em cada pergunta, quantas vezes voltou,
-origem (UTM, página de entrada) e o potencial por linha de produto (seguro, consórcio, investimentos,
-previdência, sucessão, tributário, planejamento).
+A coluna **Status** da aba Leads mostra até onde o lead chegou: iniciou, concluiu, pediu contato ou agendou.
 
-Para receber numa planilha Google, siga `integracoes/google-sheets-apps-script.gs`.
-Funciona igual com RD Station, n8n, Make, Zapier ou HubSpot: basta uma URL que aceite POST.
+A cada agendamento o script também cria a reunião no seu Google Agenda, envia o convite ao lead
+e um e-mail de confirmação. Os horários em que você já tem compromisso no Google Agenda,
+e os já reservados por outros leads, aparecem bloqueados para o próximo lead.
+
+**Instalação (uma vez):**
+
+1. Crie uma planilha no Google Drive.
+2. Na planilha: **Extensões > Apps Script**. Apague o conteúdo e cole o arquivo `integracoes/planilha-life.gs`.
+3. Revise o bloco `AJUSTES` no topo (e-mail da equipe, link fixo de reunião online, endereço presencial).
+4. Selecione a função **configurar** e clique em **Executar**. Autorize o acesso à planilha, à agenda e ao e-mail.
+5. **Implantar > Nova implantação > App da Web**. Executar como: **Eu**. Quem pode acessar: **Qualquer pessoa**.
+6. Copie a URL que termina em `/exec` e cole em `urlPlanilha`, no `src/config.js`. Rode `node build.mjs` e publique.
+
+O Google limita o envio a cerca de 100 e-mails por dia em contas gratuitas e 1.500 no Google Workspace.
 
 ## Travas de proteção
 
@@ -84,13 +101,15 @@ Mantenha este repositório **privado**: a pasta `src/` tem o motor legível.
 ## Estrutura
 
 ```
-src/config.js     contatos, URL dos leads e premissas do cálculo
+src/config.js     contatos, URL da planilha, agenda e premissas do cálculo
 src/motor.js      perguntas, Estrela LIFE, perfil, independência, plano em 3 frentes e oportunidades
-src/graficos.js   Estrela LIFE, Radar, projeção e barra 50-30-20 (SVG próprio, sem bibliotecas)
+src/graficos.js   Estrela LIFE, Indicador de Independência, projeção e barra 50-30-20 (SVG próprio, sem bibliotecas)
 src/protecao.js   travas de captura, impressão, cópia e inspeção; marca d'água
+src/contato.js    falar com especialista (ligação, WhatsApp, e-mail), agenda e envio para a planilha
 src/app.js        telas: início, acesso, perguntas, processando e resultado
 src/styles.css    visual
 build.mjs         gera dist/ (produção) e dist-dev/ (teste)
+integracoes/planilha-life.gs   script da planilha no Google Drive
 assets/           vídeo da família (1080p e 720p), capa do vídeo, logo e ícone
 ```
 
