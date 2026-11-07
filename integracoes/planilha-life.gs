@@ -17,14 +17,21 @@
  *    O Google vai pedir autorização (planilha, agenda e e-mail): aceite.
  * 5. Implantar > Nova implantação > engrenagem > "App da Web".
  *    Executar como: Eu.   Quem pode acessar: Qualquer pessoa.   Implantar.
+ *    ATENÇÃO: tem de ser "Qualquer pessoa", e não "Qualquer pessoa com Conta do Google".
+ *    Com login exigido, o Google recusa os envios dos leads e nada chega à planilha.
  * 6. Copie a "URL do app da Web" (termina em /exec) e cole em src/config.js, no campo urlPlanilha.
  * 7. Rode `node build.mjs` e publique a pasta dist/ no site.
  *
- * Ao alterar este script depois: Implantar > Gerenciar implantações > editar > Nova versão.
+ * Ao alterar este script depois: Implantar > Gerenciar implantações > lápis > Versão: Nova versão > Implantar.
+ * Assim a URL continua a mesma.
+ * Para conferir o que está no ar, abra a URL do app com ?acao=status no final.
  * Limite do Google: cerca de 100 e-mails por dia em conta gratuita e 1.500 no Google Workspace.
  */
 
+const VERSAO = '2026-11-07.2';
+
 const AJUSTES = {
+  ID_PLANILHA: '',                   // opcional: ID da planilha (o trecho entre /d/ e /edit na URL). Em branco, usa a planilha onde o script foi criado
   FUSO: 'America/Sao_Paulo',
   DURACAO_MIN: 60,
   CRIAR_EVENTO_NA_AGENDA: true,      // cria a reunião no Google Agenda de quem implantou o script
@@ -81,13 +88,18 @@ function configurar() {
   Object.keys(COLUNAS).forEach(aba);
   CalendarApp.getDefaultCalendar();
   if (AJUSTES.ENVIAR_EMAIL_CONFIRMACAO) MailApp.getRemainingDailyQuota();
-  Logger.log('Tudo pronto. Agora: Implantar > Nova implantação > App da Web.');
+  Logger.log('Planilha: ' + planilha().getUrl());
+  Logger.log('Tudo pronto. Agora: Implantar > Nova implantação > App da Web > Quem pode acessar: Qualquer pessoa.');
 }
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.acao === 'horarios') return json(horariosOcupados(p.de, p.ate));
-  return json({ ok: true, servico: 'Diagnóstico LIFE Dinâmico' });
+  if (p.acao === 'status') {
+    try { const pl = planilha(); return json({ ok: true, versao: VERSAO, planilha: pl.getName(), abas: pl.getSheets().map(a => a.getName()) }); }
+    catch (erro) { return json({ ok: false, versao: VERSAO, erro: String(erro) }); }
+  }
+  return json({ ok: true, servico: 'Diagnóstico LIFE Dinâmico', versao: VERSAO });
 }
 
 function doPost(e) {
@@ -111,11 +123,27 @@ function doPost(e) {
 }
 
 /* ------------------------------------------------------------------ */
+/* A planilha do script: a do ID em AJUSTES, a planilha onde o script foi criado
+   ou, se o script foi criado fora de uma planilha, uma planilha nova no seu Drive. */
+let PLANILHA_CACHE = null;
+function planilha() {
+  if (PLANILHA_CACHE) return PLANILHA_CACHE;
+  if (AJUSTES.ID_PLANILHA) return (PLANILHA_CACHE = SpreadsheetApp.openById(AJUSTES.ID_PLANILHA));
+  const ativa = SpreadsheetApp.getActiveSpreadsheet();
+  if (ativa) return (PLANILHA_CACHE = ativa);
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('ID_PLANILHA');
+  if (id) return (PLANILHA_CACHE = SpreadsheetApp.openById(id));
+  const nova = SpreadsheetApp.create('Leads · Diagnóstico LIFE Dinâmico');
+  props.setProperty('ID_PLANILHA', nova.getId());
+  return (PLANILHA_CACHE = nova);
+}
+
 function aba(nome) {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  let a = planilha.getSheetByName(nome);
+  const pl = planilha();
+  let a = pl.getSheetByName(nome);
   if (!a) {
-    a = planilha.insertSheet(nome);
+    a = pl.insertSheet(nome);
     const cab = COLUNAS[nome].map(c => c[1]);
     a.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold').setBackground('#1f1b1c').setFontColor('#ffffff');
     a.setFrozenRows(1);

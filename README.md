@@ -90,9 +90,15 @@ e os já reservados por outros leads, aparecem bloqueados para o próximo lead.
 3. Revise o bloco `AJUSTES` no topo (e-mail da equipe, link fixo de reunião online, endereço presencial).
 4. Selecione a função **configurar** e clique em **Executar**. Autorize o acesso à planilha, à agenda e ao e-mail.
 5. **Implantar > Nova implantação > App da Web**. Executar como: **Eu**. Quem pode acessar: **Qualquer pessoa**.
+   Não use "Qualquer pessoa com Conta do Google": com login exigido, o Google recusa os envios dos leads e nada chega à planilha.
 6. Copie a URL que termina em `/exec` e cole em `urlPlanilha`, no `src/config.js`. Rode `node build.mjs` e publique.
 
 O Google limita o envio a cerca de 100 e-mails por dia em contas gratuitas e 1.500 no Google Workspace.
+
+**Para conferir o que está no ar:** abra a URL do app com `?acao=status` no final. O certo é aparecer
+`{"ok":true,"versao":"...","planilha":"...","abas":[...]}`. Se abrir a tela de login do Google,
+o acesso da implantação não está como "Qualquer pessoa".
+Ao trocar o script, use **Implantar > Gerenciar implantações > lápis > Versão: Nova versão**: a URL continua a mesma.
 
 ## Travas de proteção
 
