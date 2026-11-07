@@ -9,6 +9,7 @@
    node build.mjs --preview D  → D/ (fragmento para pré-visualização)
 
    Publique no site somente o conteúdo de dist/.
+   Na Vercel, o vercel.json já roda este build e publica dist/.
    ===================================================================== */
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, rmSync, existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
@@ -16,8 +17,15 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /* Domínios onde o diagnóstico pode rodar (subdomínios inclusos).
-   Fora deles (cópia salva, outro site, arquivo local) a página não abre. */
-const DOMINIOS_PERMITIDOS = ['grupolifebrasil.com.br', 'localhost', '127.0.0.1'];
+   Fora deles (cópia salva, outro site, arquivo local) a página não abre.
+   Na Vercel, o domínio do projeto entra sozinho (variáveis VERCEL_*).
+   Para outro endereço: DOMINIOS_EXTRA=meusite.com.br,outro.com node build.mjs */
+const hostDe = v => String(v || '').trim().replace(/^https?:\/\//, '').replace(/[/:].*$/, '').toLowerCase();
+const DOMINIOS_PERMITIDOS = [...new Set([
+  'grupolifebrasil.com.br', 'localhost', '127.0.0.1',
+  ...String(process.env.DOMINIOS_EXTRA || '').split(','),
+  process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_BRANCH_URL, process.env.VERCEL_URL
+].map(hostDe).filter(Boolean))];
 
 const raiz = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -82,3 +90,4 @@ for (const f of ['familia-1080.mp4', 'familia-720.mp4', 'familia-poster.jpg']) {
   copyFileSync(join(raiz, 'assets/video', f), join(saida, 'assets/video', f));
 }
 console.log(`ok · modo ${modo} · ${join(saida, 'index.html')} · ${(html.length / 1024).toFixed(0)} KB`);
+if (modo === 'producao') console.log('domínios liberados: ' + DOMINIOS_PERMITIDOS.join(', '));

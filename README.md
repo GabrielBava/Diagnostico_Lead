@@ -45,6 +45,27 @@ cd dist-dev && python3 -m http.server 8080
 
 Depois abra `http://localhost:8080`.
 
+## Publicar na Vercel
+
+O `vercel.json` já deixa tudo configurado: a Vercel roda `node build.mjs`, publica só a pasta `dist/`
+(o código-fonte em `src/` não fica acessível) e libera o domínio do projeto na trava de domínio.
+
+1. Na Vercel: **Add New > Project**, importe o repositório `Diagnostico_Lead` e clique em **Deploy**
+   (não precisa mudar Framework, Build Command nem Output Directory).
+2. Abra o endereço de produção (`seu-projeto.vercel.app`) e faça um diagnóstico de teste:
+   o lead deve aparecer na aba **Leads** da planilha.
+3. Para usar um endereço próprio, como `diagnostico.grupolifebrasil.com.br`, adicione o domínio em
+   **Settings > Domains**. Subdomínios de `grupolifebrasil.com.br` já são liberados.
+
+Endereços de **Preview** da Vercel (de outras branches) vêm com login da Vercel ligado por padrão:
+use o endereço de produção para os leads.
+
+Se publicar a pasta `dist/` por outro caminho (upload manual, outra hospedagem), inclua o domínio no build:
+
+```bash
+DOMINIOS_EXTRA=seu-projeto.vercel.app node build.mjs
+```
+
 ## Planilha no Google Drive
 
 O arquivo `integracoes/planilha-life.gs` transforma uma planilha do seu Drive no destino de tudo:
@@ -109,6 +130,7 @@ src/contato.js    falar com especialista (ligação, WhatsApp, e-mail), agenda e
 src/app.js        telas: início, acesso, perguntas, processando e resultado
 src/styles.css    visual
 build.mjs         gera dist/ (produção) e dist-dev/ (teste)
+vercel.json       build e cabeçalhos de segurança na Vercel
 integracoes/planilha-life.gs   script da planilha no Google Drive
 assets/           vídeo da família (1080p e 720p), capa do vídeo, logo e ícone
 ```
