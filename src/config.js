@@ -24,7 +24,7 @@ const CONFIG = {
      URL do App da Web do Apps Script (integracoes/planilha-life.gs).
      Recebe leads, respostas, resultados, pedidos de contato e agendamentos.
      Em branco, nada é registrado. */
-  urlPlanilha: '',
+  urlPlanilha: 'https://script.google.com/macros/s/AKfycbxGaYCSKP7fG94Bp9yF0sq9dqUo4IB2qRrS__WV2_DeklhGljtp8KSUpvvFBTxXRvsMqg/exec',
 
   /* ---------- Agenda do Diagnóstico Completo ---------- */
   agenda: {

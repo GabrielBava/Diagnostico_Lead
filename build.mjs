@@ -43,7 +43,7 @@ function enxugar(js) {
 
 const partes = ['src/config.js', 'src/motor.js', 'src/graficos.js', 'src/protecao.js', 'src/contato.js', 'src/app.js'].map(ler);
 /* --planilha <url>: troca a URL da planilha só neste build (útil para testes) */
-if (args.includes('--planilha')) partes[0] = partes[0].replace("urlPlanilha: ''", `urlPlanilha: ${JSON.stringify(args[args.indexOf('--planilha') + 1])}`);
+if (args.includes('--planilha')) partes[0] = partes[0].replace(/urlPlanilha: '[^']*'/, `urlPlanilha: ${JSON.stringify(args[args.indexOf('--planilha') + 1] || '')}`);
 let js = '"use strict";\n' + partes.join('\n') + '\niniciarApp();';
 js = js.replaceAll('{{LOGO}}', LOGO).replaceAll('{{CORACAO}}', CORACAO);
 if (modo !== 'dev') js = enxugar(js);
